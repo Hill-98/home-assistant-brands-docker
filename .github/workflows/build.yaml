@@ -6,12 +6,6 @@ on:
     paths:
       - '.github/workflows/build.yml'
       - 'Dockerfile'
-  workflow_dispatch:
-    inputs:
-      force:
-        description: Force rebuild image
-        default: false
-        type: boolean
 
 jobs:
   check:
@@ -28,9 +22,12 @@ jobs:
           path: cache/commit
           key: commit
 
+      - name: Create cache path
+        run: mkdir -p cache/commit
+
       - name: Fetch locale cache commit
         id: fetch_locale
-        run: echo "sha1=$(cat cache/commit/sha1)" >> "$GITHUB_OUTPUT"
+        run: echo "sha1=$(cat cache/commit/sha1 || echo 0)" >> "$GITHUB_OUTPUT"
 
       - name: Fetch remote repo latest commit
         id: fetch_remote
