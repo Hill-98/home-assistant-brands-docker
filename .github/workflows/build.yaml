@@ -60,14 +60,5 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build brands
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y findutils git librsvg2-bin jq optipng rdfind rsync
-          mkdir -p /usr/share/nginx/html
-          sudo git clone --depth=1 https://github.com/home-assistant/brands.git /usr/share/nginx/html/brands
-          cd /usr/share/nginx/html/brands
-          sudo ./scripts/build.sh
-          sudo rdfind -makesymlinks true -makeresultsfile false build
       - name: Build and Push Docker image
         run: docker buildx build --platform linux/arm64,linux/amd64 --tag hill98/home-assistant-brands:latest --push .
