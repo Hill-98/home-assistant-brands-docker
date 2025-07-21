@@ -48,6 +48,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Build brands
+        run: ./build.sh
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
