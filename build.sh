@@ -14,4 +14,5 @@ cd brands
 ./scripts/build.sh > /dev/null
 
 cd build
+rdfind  -makesymlinks true -makeresultsfile false .
 symlinks -c -r .
