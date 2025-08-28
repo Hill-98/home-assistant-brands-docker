@@ -3,36 +3,18 @@ on:
   schedule:
     - cron: '0 8 * * *'
   push:
-    paths:
-      - '.github/workflows/build.yaml'
-      - 'Dockerfile'
-      - 'build.sh'
   workflow_dispatch:
 
 jobs:
-  check:
-    name: 'Check remote repo commit'
-    outputs:
-      local_sha1: ${{ steps.fetch_locale.outputs.sha1 }}
-      remote_sha1: ${{ steps.fetch_remote.outputs.sha1 }}
+  build:
+    name: 'Build Docker Image'
     runs-on: ubuntu-latest
     steps:
-      - name: Cache Commit
-        id: cache-commit
-        uses: actions/cache@v4
-        with:
-          path: cache/commit
-          key: commit
-
-      - name: Create cache path
-        run: mkdir -p cache/commit
-
-      - name: Fetch locale cache commit
-        id: fetch_locale
-        run: echo "sha1=$(cat cache/commit/sha1 || echo 0)" >> "$GITHUB_OUTPUT"
+      - name: Check out code
+        uses: actions/checkout@v4
 
       - name: Fetch remote repo latest commit
-        id: fetch_remote
+        id: fetch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -40,16 +22,15 @@ jobs:
           jq -r .sha1 /tmp/gh_result > cache/commit/sha1
           echo "sha1=$(cat cache/commit/sha1)" >> "$GITHUB_OUTPUT"
 
-  build:
-    name: 'Build Docker Image'
-    needs: check
-    if: needs.check.outputs.local_sha1 != needs.check.outputs.remote_sha1
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+      - name: Cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: cache/commit
+          key: commit-${{ steps.fetch.outputs.sha1 }}
 
       - name: Build brands
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: ./build.sh
 
       - name: Set up QEMU
@@ -65,4 +46,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Docker image
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: docker buildx build --platform linux/arm64,linux/amd64 --tag hill98/home-assistant-brands:latest --push .
+
+      - name: Save state to cache
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: install -D -m 0644 -T -v /dev/stdin cache/commit/state <<< "ok"
