@@ -18,9 +18,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/home-assistant/brands/commits/heads/master > /tmp/gh_result
-          jq -r .sha1 /tmp/gh_result > cache/commit/sha1
-          echo "sha1=$(cat cache/commit/sha1)" >> "$GITHUB_OUTPUT"
+          gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/home-assistant/brands/commits/heads/master > gh_result
+          echo "sha1=$(jq -r .sha1 gh_result)" >> "$GITHUB_OUTPUT"
 
       - name: Cache
         id: cache
